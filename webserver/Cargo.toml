@@ -17,3 +17,6 @@ tower = "0.4.13"
 tower-http = { version = "0.5.0", features = ["fs", "cors"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+sea-orm = { version = "0.12", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros" ] }
+log = "0.4.20"
+migration = { path = "./migration" }

@@ -1,3 +1,6 @@
+mod chat;
+mod entities;
+
 use askama::Template;
 use axum::{
     debug_handler,
@@ -7,10 +10,13 @@ use axum::{
     routing::{get, post},
     Form, Router,
 };
+use migration::{Migrator, MigratorTrait};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use serde::Deserialize;
 use std::{
     env,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -32,12 +38,23 @@ async fn main() -> anyhow::Result<()> {
     info!("Starting axum");
     dotenv::dotenv().ok();
 
-    let _db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let port = env::var("PORT").expect("PORT is not set in .env file");
     let host = env::var("HOST").expect("HOST is not set in .env file");
 
+    let mut opt = ConnectOptions::new(db_url);
+    opt.max_connections(100)
+        .min_connections(5)
+        .connect_timeout(Duration::from_secs(8))
+        .sqlx_logging(true)
+        .sqlx_logging_level(log::LevelFilter::Info);
+
+    let db: DatabaseConnection = Database::connect(opt).await?;
+    Migrator::up(&db, None).await?;
+
     let state = AppState {
         messages: Mutex::new(vec![]),
+        db,
     };
 
     let cors = CorsLayer::new()
@@ -104,6 +121,7 @@ async fn add_todo(
 
 pub struct AppState {
     messages: Mutex<Vec<String>>,
+    db: DatabaseConnection,
 }
 
 async fn another_page() -> impl IntoResponse {
