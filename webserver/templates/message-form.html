@@ -1,0 +1,50 @@
+
+<div id="messages"  class="flex flex-col overflow-y-auto space-y-2">
+	{% for message in messages %}
+			{% if message.user_id != user_id %}
+				<div class="flex">
+				  <div class="p-3 bg-gray-300 text-black p-2 rounded-lg max-w-xs">
+			{% else %}
+				<div class="flex justify-end">
+				<div class="p-3 m-3 bg-blue-200 text-black p-2 rounded-lg max-w-xs">
+			{% endif %}
+					{{ message.text }}
+				  </div>
+				</div>
+	{% endfor %}
+</div>
+<form
+	hx-ext="ws"
+	ws-connect="/api/receive_messages?user_id={{ user_id }}&chat_id={{ chat_id }}"
+	ws-target="#new_messages"
+	hx-vals='{"chat_id": {{ chat_id }}, "user_id": {{ user_id }}}'
+	class="w-full bg-white p-4 flex items-center bottom-0 "
+	id="chatForm"
+	ws-send
+		>
+
+		<input
+			type="text"
+			name="message"
+			id="message"
+			placeholder="Type your message..." 
+			class="flex-1 border rounded-full px-4 py-2 focus:outline-none"
+		/>
+		<button
+			type="submit"
+			class="bg-blue-500 text-white rounded-full p-2 ml-2 hover:bg-blue-600 focus:outline-none"
+		>
+			Add
+		</button>
+</form>
+<script>
+  // Add the hx-trigger attribute to listen for form submission
+  document.getElementById('chatForm').addEventListener('htmx:wsAfterMessage', function (event) {
+      // Reset the form upon successful submission
+      event.target.reset();
+	  const element = 
+	  document.getElementById('messages');
+	  element.scrollTop=element.scrollHeight;
+  });
+</script>
+

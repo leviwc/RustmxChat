@@ -3,27 +3,24 @@ mod entities;
 
 use askama::Template;
 use axum::{
-    debug_handler,
-    extract::State,
     http::{header::CONTENT_TYPE, Method, StatusCode},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
-    Form, Router,
+    Router,
 };
+
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
-use serde::Deserialize;
-use std::{
-    env,
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use serde::Serialize;
+use std::{env, sync::Arc, time::Duration};
 use tower_http::{
     cors::{Any, CorsLayer},
     services::ServeDir,
 };
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+use crate::chat::routes::{add_message, get_chats, get_messages, websocket_handler};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -41,6 +38,7 @@ async fn main() -> anyhow::Result<()> {
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let port = env::var("PORT").expect("PORT is not set in .env file");
     let host = env::var("HOST").expect("HOST is not set in .env file");
+    let redis_url = env::var("REDIS_URL").expect("REDIS_URL is not set in .env file");
 
     let mut opt = ConnectOptions::new(db_url);
     opt.max_connections(100)
@@ -51,11 +49,8 @@ async fn main() -> anyhow::Result<()> {
 
     let db: DatabaseConnection = Database::connect(opt).await?;
     Migrator::up(&db, None).await?;
-
-    let state = AppState {
-        messages: Mutex::new(vec![]),
-        db,
-    };
+    let client = redis::Client::open(redis_url).expect("Failed starting redis");
+    let state = AppState { db, redis: client };
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
@@ -66,7 +61,10 @@ async fn main() -> anyhow::Result<()> {
 
     let api_router = Router::new()
         .route("/hello", get(hello_from_the_server))
-        .route("/todos", post(add_todo))
+        .route("/messages", post(add_message))
+        .route("/receive_messages", get(websocket_handler))
+        .route("/get_messages", get(get_messages))
+        .route("/get_chats", get(get_chats))
         .with_state(Arc::new(state));
 
     let app = Router::new()
@@ -93,35 +91,9 @@ async fn hello_from_the_server() -> &'static str {
     "Hello!"
 }
 
-#[derive(Template)]
-#[template(path = "todo-list.html")]
-struct TodoList {
-    todos: Vec<String>,
-}
-
-#[derive(Deserialize)]
-struct TodoRequest {
-    todo: String,
-}
-
-#[debug_handler]
-async fn add_todo(
-    State(state): State<Arc<AppState>>,
-    Form(todo): Form<TodoRequest>,
-) -> impl IntoResponse {
-    let mut lock = state.messages.lock().unwrap();
-    lock.push(todo.todo);
-
-    let template = TodoList {
-        todos: lock.clone(),
-    };
-
-    HtmlTemplate(template)
-}
-
 pub struct AppState {
-    messages: Mutex<Vec<String>>,
     db: DatabaseConnection,
+    redis: redis::Client,
 }
 
 async fn another_page() -> impl IntoResponse {
@@ -144,6 +116,7 @@ async fn hello() -> impl IntoResponse {
 }
 
 /// A wrapper type that we'll use to encapsulate HTML parsed by askama into valid HTML for axum to serve.
+#[derive(Serialize)]
 struct HtmlTemplate<T>(T);
 
 /// Allows us to convert Askama HTML templates into valid HTML for axum to serve in the response.

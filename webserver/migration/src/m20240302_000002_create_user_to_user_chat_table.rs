@@ -18,6 +18,11 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
+                    .col(
+                        ColumnDef::new(Chat::LastChangedTimestamp)
+                            .integer()
+                            .not_null(),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -67,6 +72,7 @@ impl MigrationTrait for Migration {
 pub enum Chat {
     Table,
     Id,
+    LastChangedTimestamp,
 }
 
 #[derive(DeriveIden)]

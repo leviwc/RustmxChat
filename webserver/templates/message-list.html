@@ -1,0 +1,14 @@
+<div  hx-swap-oob="beforeend:#messages" >
+{% for message in messages %}
+		{% if message.user_id != user_id %}
+			<div class="flex">
+              <div class="p-3 bg-gray-300 text-black p-2 rounded-lg max-w-xs">
+		{% else %}
+			<div class="flex justify-end">
+            <div class="p-3 m-3 bg-blue-200 text-black p-2 rounded-lg max-w-xs">
+		{% endif %}
+				{{ message.text }}
+              </div>
+            </div>
+{% endfor %}
+</div>

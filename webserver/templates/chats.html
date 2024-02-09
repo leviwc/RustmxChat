@@ -1,0 +1,11 @@
+<div class="flex overflow-hidden h-screen">
+	<div class="w-1/4 bg-blue-600 border-r overflow-y-auto border-gray-300"> 
+		<div class="overflow-y-auto h-screen bg-white">
+		{% for chat in chats %}
+		<button class="flex w-full cursor-pointer hover:bg-gray-100 rounded-md p-2" hx-get="/api/get_messages?chat_id={{ chat.id }}&user_id={{ user_id }}" hx-swap="innerHTML" hx-target="#chat-box" > {{ chat.id }} </button>
+		{% endfor %}
+		</div>
+	</div>
+
+	<div id="chat-box" class = "flex flex-col h-screen w-full"> Current chat </div> 
+</div>
