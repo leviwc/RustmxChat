@@ -1,5 +1,6 @@
 mod chat;
 mod entities;
+mod user;
 
 use askama::Template;
 use axum::{
@@ -20,7 +21,9 @@ use tower_http::{
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::chat::routes::{add_message, get_chats, get_messages, websocket_handler};
+use crate::chat::routes::{
+    chat_page::chat_page, get_chats::get_chats, live_chat::live_chat_websocket,
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -61,9 +64,8 @@ async fn main() -> anyhow::Result<()> {
 
     let api_router = Router::new()
         .route("/hello", get(hello_from_the_server))
-        .route("/messages", post(add_message))
-        .route("/receive_messages", get(websocket_handler))
-        .route("/get_messages", get(get_messages))
+        .route("/live_chat", get(live_chat_websocket))
+        .route("/chat_page", get(chat_page))
         .route("/get_chats", get(get_chats))
         .with_state(Arc::new(state));
 

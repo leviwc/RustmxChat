@@ -15,7 +15,7 @@
 </div>
 <form
 	hx-ext="ws"
-	ws-connect="/api/receive_messages?user_id={{ user_id }}&chat_id={{ chat_id }}"
+	ws-connect="/api/live_chat?user_id={{ user_id }}&chat_id={{ chat_id }}"
 	ws-target="#new_messages"
 	hx-vals='{"chat_id": {{ chat_id }}, "user_id": {{ user_id }}}'
 	class="w-full bg-white p-4 flex items-center bottom-0 "
