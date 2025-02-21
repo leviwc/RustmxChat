@@ -1,15 +1,15 @@
 use crate::chat::database::ChatDatabase;
 use askama::Template;
-use axum::extract::{ws::WebSocket, State, WebSocketUpgrade};
+use axum::extract::{State};
 use axum::{debug_handler, response::IntoResponse, Form};
-use futures::{sink::SinkExt, stream::StreamExt};
-use redis::Commands;
-use sea_orm::DatabaseConnection;
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tracing::info;
 
-use crate::{entities::message, AppState, HtmlTemplate};
+
+
+use serde::{Deserialize};
+use std::sync::Arc;
+
+
+use crate::{AppState, HtmlTemplate};
 
 #[derive(Deserialize)]
 pub struct GetChatsRequest {

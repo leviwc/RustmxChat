@@ -21,8 +21,9 @@ use tower_http::{
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::chat::routes::{
-    chat_page::chat_page, get_chats::get_chats, live_chat::live_chat_websocket,
+use crate::{
+    chat::routes::{chat_page::chat_page, get_chats::get_chats, live_chat::live_chat_websocket},
+    user::routes::create_user::create_user,
 };
 
 #[tokio::main]
@@ -67,6 +68,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/live_chat", get(live_chat_websocket))
         .route("/chat_page", get(chat_page))
         .route("/get_chats", get(get_chats))
+        .route("/create_user", post(create_user))
         .with_state(Arc::new(state));
 
     let app = Router::new()
